@@ -1,0 +1,12 @@
+enum ItemType : ubyte { Undefined, Bin, Box, Product, Kit, Container}
+
+struct BinItem {    
+    Type: ItemType;
+    ItemID: ulong;
+    Count: uint;
+}
+
+table Bin {
+    Type: ItemType;
+    Bins:[BinItem];
+}
