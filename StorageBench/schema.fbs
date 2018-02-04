@@ -1,12 +1,20 @@
-enum ItemType : ubyte { Undefined, Bin, Box, Product, Kit, Container}
+enum ItemType : ubyte { Undefined = 0, Bin = 1, Box, Product, Kit, Container, Location}
+enum BinFlags : ubyte { None = 0, Missing = 1, Damaged = 2, Reserved = 4, HasSale = 8}
 
-struct BinItem {    
-    Type: ItemType;
+
+struct BinItem {
     ItemID: ulong;
-    Count: uint;
+    ShipmentID: ulong;
+    Count: uint;    
+    Type: ItemType = Product;        
 }
 
 table Bin {
+    Items: [BinItem];
     Type: ItemType;
-    Bins:[BinItem];
+    Flags: BinFlags = None;
+    Code: string;
+    Subtype: uint;
+    SaleID: ulong;
+    
 }

@@ -25,11 +25,11 @@ namespace SimCluster {
                         var buf = new ByteBuffer(data);
                         var bin = Bin.GetRootAsBin(buf, br);
 
-                        var search = i % Const.BinItemCount + 10000;
+                        var search = i % Const.BinItemCount + Const.ProductIDOffset;
 
                         
-                        for (int j = 0; j < bin.BinsLength; j++) {
-                            var it = bin.Bins(j).Value;
+                        for (int j = 0; j < bin.ItemsLength; j++) {
+                            var it = bin.Items(j).Value;
                             if (it.ItemID == search) {
                                 it.MutateCount(it.Count + 1);
                                 break;
@@ -45,13 +45,15 @@ namespace SimCluster {
 
         private static void CreateBin(LightningEnvironment env, LightningDatabase db, byte[] key) {
             var builder = new FlatBufferBuilder(1024);
-            Bin.StartBinsVector(builder, Const.BinItemCount);
+            Bin.StartItemsVector(builder, Const.BinItemCount);
             for (uint i = 0; i < Const.BinItemCount; i++) {
-                BinItem.CreateBinItem(builder, ItemType.Product, i+10000, i+1);
+                var itemID = i+Const.ProductIDOffset;
+                BinItem.CreateBinItem(builder, itemID, 0,i+1, ItemType.Product);
             }
             
             var bins = builder.EndVector();
-            var bin = Bin.CreateBin(builder, ItemType.Bin, bins);
+            var code = builder.CreateString(Const.BinCode);
+            var bin = Bin.CreateBin(builder, bins, ItemType.Bin, Const.Flag, code, 1, Const.SaleID);
             builder.Finish(bin.Value);
 
             using (var tx = env.BeginTransaction()) {
@@ -83,12 +85,12 @@ namespace SimCluster {
 
                         var br = Bin.GetRootAsBin(new ByteBuffer(data.Array), bin);
                         
-                        var search = i % Const.BinItemCount + 10000;
+                        var search = i % Const.BinItemCount + Const.ProductIDOffset;
 
-                        var binCount = br.BinsLength;
+                        var binCount = br.ItemsLength;
                         var found = false;
                         for (int j = 0; j < binCount; j++) {
-                            var bi = br.Bins(j).Value;
+                            var bi = br.Items(j).Value;
                             if (bi.ItemID == search) {
                                 var count = bi.Count;
                                 if (count > 1) {
@@ -101,17 +103,18 @@ namespace SimCluster {
                                     // write new without this item
                                     // TODO: use garbage collected storage
                                     builder.Clear();
-                                    Bin.StartBinsVector(builder, binCount - 1);
+                                    Bin.StartItemsVector(builder, binCount - 1);
                                     for (int k = 0; k < binCount; k++) {
-                                        var old = br.Bins(k).Value;
+                                        var old = br.Items(k).Value;
                                         var id = old.ItemID;
                                         if (id != search) {
-                                            BinItem.CreateBinItem(builder, ItemType.Product, id, old.Count);
+                                            BinItem.CreateBinItem(builder, id, old.ShipmentID, old.Count, old.Type);
                                         }
                                     }
 
                                     var bins = builder.EndVector();
-                                    var nb = Bin.CreateBin(builder, ItemType.Bin, bins);
+                                    var code = builder.CreateString(br.Code);
+                                    var nb = Bin.CreateBin(builder, bins, br.Type, br.Flags, code, br.Subtype, br.SaleID);
                                     builder.Finish(nb.Value);
                                     data = builder.ToSegment();
                                     found = true;
@@ -126,43 +129,26 @@ namespace SimCluster {
                             // replenish
                             // TODO: use garbage collected storage
                             builder.Clear();
-                            Bin.StartBinsVector(builder, binCount + 1);
+                            Bin.StartItemsVector(builder, binCount + 1);
                             for (int k = 0; k < binCount; k++) {
-                                var old = br.Bins(k).Value;
-                                var id = old.ItemID;
-                                BinItem.CreateBinItem(builder, ItemType.Product, id, old.Count);
+                                var old = br.Items(k).Value;
+                                BinItem.CreateBinItem(builder, old.ItemID, old.ShipmentID, old.Count, old.Type);
                             }
 
-                            BinItem.CreateBinItem(builder, ItemType.Product, search, Const.RestockCount);
+                            BinItem.CreateBinItem(builder, search, i, Const.RestockCount, ItemType.Product);
 
                             var bins = builder.EndVector();
-                            var nb = Bin.CreateBin(builder, ItemType.Bin, bins);
+                            var code = builder.CreateString(br.Code);
+                            var nb = Bin.CreateBin(builder, bins, br.Type, br.Flags, code, br.Subtype, br.SaleID);
                             builder.Finish(nb.Value);
                             data = builder.ToSegment();
-                            
                         }
-                        
                         tx.Put(db, key, data);
                         tx.Commit();
-
-                    
-                        
                     }
-                    
                 }
             }
         }
-
-
-        struct BinItemDto {
-            public readonly ulong ItemID;
-            public readonly uint Count;
-
-            public BinItemDto(ulong itemId, uint count) {
-                ItemID = itemId;
-                Count = count;
-            }
-        } 
 
         public static void BenchRead(int n) {
             using (var env = Utils.NewEnv()) {
@@ -185,10 +171,10 @@ namespace SimCluster {
                         var buf = new ByteBuffer(data);
                         var bin = Bin.GetRootAsBin(buf, br);
 
-                        var search = i % Const.BinItemCount + 10000;
+                        var search = i % Const.BinItemCount + Const.ProductIDOffset;
 
-                        for (int j = 0; j < bin.BinsLength; j++) {
-                            var it = bin.Bins(j).Value;
+                        for (int j = 0; j < bin.ItemsLength; j++) {
+                            var it = bin.Items(j).Value;
                             if (it.ItemID == search) {
                                 counter += it.Count;
                                 break;
@@ -197,22 +183,6 @@ namespace SimCluster {
                     }
                 }
             }
-        }
-
-
-
-        private static bool AddMutate(Bin bin, uint search, uint count) {
-            for (int j = 0; j < bin.BinsLength; j++) {
-                var it = bin.Bins(j).Value;
-                if (it.ItemID == search) {
-                    it.MutateCount(it.Count + count);
-                    return true;
-                }
-            }
-
-            return false;
-
-
         }
     }
 }

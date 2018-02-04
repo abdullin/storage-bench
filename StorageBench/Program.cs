@@ -4,8 +4,12 @@ using LightningDB;
 namespace SimCluster {
 
     public static class Const {
-        public const int BinItemCount = 3;
-        public const uint RestockCount = 10;
+        public const int BinItemCount = 5;
+        public const uint RestockCount = 20;
+        public const ulong ProductIDOffset = 100000;
+        public const string BinCode = "RandomBinHere";
+        public const ulong SaleID = 1234023;
+        public const BinFlags Flag = BinFlags.HasSale;
         public const TransactionBeginFlags WriteTx = TransactionBeginFlags.NoSync;
     }
     internal class Program {

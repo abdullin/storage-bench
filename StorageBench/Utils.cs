@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using LightningDB;
 using ProtoBuf;
 
@@ -13,10 +14,15 @@ namespace SimCluster {
         }
 
         
-        public static byte[] Serialize<T>(T obj) {
-            using (var mem = new MemoryStream()) {
+        public static ArraySegment<byte> Serialize<T>(T obj, byte[] buffer = null) {
+
+            if (null == buffer) {
+                buffer = new byte[1024];
+            }
+            // allocate a buffer in
+            using (var mem = new MemoryStream(buffer)) {
                 Serializer.Serialize(mem, obj);
-                return mem.ToArray();
+                return new ArraySegment<byte>(buffer, 0, (int)mem.Position);
             }
         }
         
