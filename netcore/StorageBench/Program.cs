@@ -14,7 +14,6 @@ namespace SimCluster {
     }
     internal class Program {
         public static void Main(string[] args) {
-
             TestLmdb();
             
             var benchmarks = new Action<int>[] {

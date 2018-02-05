@@ -27,9 +27,27 @@ This is the purpose of this project - to provide some stable place to
 compare different storage strategies and benchmark any changes in a
 repeatable manner.
 
+# Scalability Targets
+
+The goal of this research is to find a balance between performance and
+development convenience while targeting the following scenarios:
+
+* fast replay of 100M - 10B events to rebuild views or run reports
+* LMDB environments up to 200M entities (B-Tree depth 30-35) and total
+  size up to 200GB (anything large could be partitioned)
+* Write throughput (read/update/save) of 10k tx/sec
+
 #  Results
 
-Current results on my machine for .NET Core:
+Machine:
+```
+MacBook Pro Retina, 13-inch, Early 2015
+Processor 2,7 GHz Intel Core i5
+Memory 8 GB 1867 MHz DDR3
+macOS Sierra 10.12.6
+```
+
+## .NET Core
 
 ```
 InventoryBinProtoBuf/BenchAdd: 5953 op/sec / 0.1679ms
@@ -40,13 +58,6 @@ InventoryBinProtoBuf/BenchRead: 290276 op/sec / 0.0034ms
 InventoryBinFlatBuffers/BenchRead: 712588 op/sec / 0.0014ms
 ```
 
-Machine:
-```
-MacBook Pro Retina, 13-inch, Early 2015
-Processor 2,7 GHz Intel Core i5
-Memory 8 GB 1867 MHz DDR3
-macOS Sierra 10.12.6
-```
 
 # Conclusions
 
