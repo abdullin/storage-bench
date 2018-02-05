@@ -29,22 +29,32 @@ repeatable manner.
 
 #  Results
 
-Current results on my MacBook Pro (Early 2015, 2,7 GHz Intel Core i5)
-for .NET Core:
+Current results on my machine for .NET Core:
 
 ```
-InventoryBinProtoBuf/BenchAdd: 6299 op/sec / 0.1587ms
-InventoryBinFlatBuffers/BenchAdd: 6873 op/sec / 0.1454ms
-InventoryBinProtoBuf/BenchAddRemove: 6344 op/sec / 0.1576ms
-InventoryBinFlatBuffers/BenchAddRemove: 6975 op/sec / 0.1433ms
-InventoryBinProtoBuf/BenchRead: 306674 op/sec / 0.0032ms
-InventoryBinFlatBuffers/BenchRead: 742263 op/sec / 0.0013ms
+InventoryBinProtoBuf/BenchAdd: 5953 op/sec / 0.1679ms
+InventoryBinFlatBuffers/BenchAdd: 6438 op/sec / 0.1553ms
+InventoryBinProtoBuf/BenchAddRemove: 6359 op/sec / 0.1572ms
+InventoryBinFlatBuffers/BenchAddRemove: 6472 op/sec / 0.1545ms
+InventoryBinProtoBuf/BenchRead: 290276 op/sec / 0.0034ms
+InventoryBinFlatBuffers/BenchRead: 712588 op/sec / 0.0014ms
 ```
+
+Machine:
+```
+MacBook Pro Retina, 13-inch, Early 2015
+Processor 2,7 GHz Intel Core i5
+Memory 8 GB 1867 MHz DDR3
+macOS Sierra 10.12.6
+```
+
+# Conclusions
 
 So it looks like:
 
-* FlatBuffers offer significant performance boost on partial reads
-* Writing performance is equivalent
+* FlatBuffers indeed offer significant performance boost on partial
+  reads
+* Writing performance is comparable
 * FlatBuffers take more effort to write an object down or mutate
 
 Note, that LMDB library could potentially benefit from Span/Memory
