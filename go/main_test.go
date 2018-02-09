@@ -106,7 +106,7 @@ func CreateBin(key []byte) {
 
 }
 
-func BenchmarkRead(b *testing.B) {
+func BenchmarkFlatBuffersRead(b *testing.B) {
 
 	var (
 		data []byte
@@ -147,7 +147,7 @@ func BenchmarkRead(b *testing.B) {
 
 }
 
-func BenchmarkAdd(b *testing.B) {
+func BenchmarkFlatBuffersAdd(b *testing.B) {
 
 	var (
 		data []byte
@@ -185,4 +185,102 @@ func BenchmarkAdd(b *testing.B) {
 		tx.Commit()
 	}
 
+}
+
+func BenchmarkFlatBuffersAddRemove(b *testing.B) {
+
+	var (
+		data []byte
+
+		item = &BinItem{}
+		bin  = &Bin{}
+		key  = []byte{1}
+	)
+	CreateBin(key)
+	builder := fb.NewBuilder(1024)
+
+	for i := 0; i < b.N; i++ {
+		tx, err := env.BeginTxn(nil, WriteTx)
+		if err != nil {
+			panic(err)
+		}
+
+		data, err = tx.Get(db, key)
+		if err != nil {
+			panic(err)
+		}
+
+		n := fb.GetUOffsetT(data)
+		bin.Init(data, n)
+
+		search := uint64(i%BinItemCount + ProductIDOffset)
+		binCount := bin.ItemsLength()
+		found := false
+
+		for j := 0; j < binCount; j++ {
+			bin.Items(item, j)
+			if item.ItemID() == search {
+				count := item.Count()
+				if count > 1 {
+					item.MutateCount(count - 1)
+					found = true
+					break
+				}
+				if count == 1 {
+					builder.Reset()
+					BinStartItemsVector(builder, binCount-1)
+					for k := 0; k < binCount; k++ {
+						bin.Items(item, k)
+						id := item.ItemID()
+						if id != search {
+							CreateBinItem(builder, id, item.ShipmentID(), item.Count(), item.Type())
+						}
+					}
+					bins := builder.EndVector(binCount - 1)
+					code := builder.CreateString(string(bin.Code()))
+
+					BinStart(builder)
+					BinAddItems(builder, bins)
+					BinAddType(builder, bin.Type())
+					BinAddFlags(builder, bin.Flags())
+					BinAddCode(builder, code)
+					BinAddSubtype(builder, bin.Subtype())
+					BinAddSaleID(builder, bin.SaleID())
+					nb := BinEnd(builder)
+					builder.Finish(nb)
+					found = true
+					data = builder.FinishedBytes()
+					break
+				}
+
+			}
+		}
+		if !found {
+
+			builder.Reset()
+			BinStartItemsVector(builder, binCount+1)
+			for k := 0; k < binCount; k++ {
+				bin.Items(item, k)
+				CreateBinItem(builder, item.ItemID(), item.ShipmentID(), item.Count(), item.Type())
+			}
+			CreateBinItem(builder, search, uint64(i), RestockCount, ItemTypeProduct)
+			bins := builder.EndVector(binCount + 1)
+			code := builder.CreateString(string(bin.Code()))
+
+			BinStart(builder)
+			BinAddItems(builder, bins)
+			BinAddType(builder, bin.Type())
+			BinAddFlags(builder, bin.Flags())
+			BinAddCode(builder, code)
+			BinAddSubtype(builder, bin.Subtype())
+			BinAddSaleID(builder, bin.SaleID())
+			nb := BinEnd(builder)
+			builder.Finish(nb)
+			data = builder.FinishedBytes()
+		}
+
+		tx.Put(db, key, data, 0)
+
+		tx.Commit()
+	}
 }
