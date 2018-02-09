@@ -38,11 +38,11 @@ func init() {
 	}
 
 	if err = env.SetFlags(lmdb.MapAsync); err != nil {
-		panic("set flag")
+		panic(errors.Wrap(err, "set flag"))
 	}
 
 	os.MkdirAll(folder, os.ModePerm)
-	err = env.Open(folder, 0, os.ModePerm)
+	err = env.Open(folder, lmdb.MapAsync, os.ModePerm)
 	if err != nil {
 		panic(errors.Wrap(err, "open env in "+folder))
 	}
@@ -106,7 +106,7 @@ func CreateBin(key []byte) {
 
 }
 
-func BenchmarkAdd(b *testing.B) {
+func BenchmarkRead(b *testing.B) {
 
 	var (
 		data []byte
@@ -116,11 +116,17 @@ func BenchmarkAdd(b *testing.B) {
 	)
 	CreateBin(key)
 
+	var counter uint64
+
+	tx, err := env.BeginTxn(nil, lmdb.Readonly)
+	if err != nil {
+		panic(err)
+	}
+
+	tx.RawRead = true
 	for i := 0; i < b.N; i++ {
-		tx, err := env.BeginTxn(nil, WriteTx)
-		if err != nil {
-			panic(err)
-		}
+		tx.Reset()
+		tx.Renew()
 		data, err = tx.Get(db, key)
 		if err != nil {
 			panic(err)
@@ -131,11 +137,56 @@ func BenchmarkAdd(b *testing.B) {
 		for j := 0; j < bin.ItemsLength(); j++ {
 			bin.Items(item, j)
 			if item.ItemID() == search {
+				counter += uint64(item.Count())
+				break
+			}
+		}
+
+	}
+	tx.Abort()
+
+}
+
+func BenchmarkAdd(b *testing.B) {
+
+	var (
+		data []byte
+
+		item   = &BinItem{}
+		bin    = &Bin{}
+		key    = []byte{1}
+		source []byte
+	)
+	CreateBin(key)
+
+	for i := 0; i < b.N; i++ {
+		tx, err := env.BeginTxn(nil, WriteTx)
+		if err != nil {
+			panic(err)
+		}
+
+		tx.RawRead = true
+
+		source, err = tx.Get(db, key)
+		if err != nil {
+			panic(err)
+		}
+
+		data, err = tx.PutReserve(db, key, len(source), 0)
+		copy(data, source)
+
+		n := fb.GetUOffsetT(data)
+		bin.Init(data, n)
+
+		search := uint64(i%BinItemCount + ProductIDOffset)
+		for j := 0; j < bin.ItemsLength(); j++ {
+			bin.Items(item, j)
+			if item.ItemID() == search {
 				item.MutateCount(item.Count() + 1)
 				break
 			}
 		}
-		tx.Put(db, key, data, 0)
+
 		tx.Commit()
 	}
 
