@@ -152,10 +152,9 @@ func BenchmarkAdd(b *testing.B) {
 	var (
 		data []byte
 
-		item   = &BinItem{}
-		bin    = &Bin{}
-		key    = []byte{1}
-		source []byte
+		item = &BinItem{}
+		bin  = &Bin{}
+		key  = []byte{1}
 	)
 	CreateBin(key)
 
@@ -165,15 +164,10 @@ func BenchmarkAdd(b *testing.B) {
 			panic(err)
 		}
 
-		tx.RawRead = true
-
-		source, err = tx.Get(db, key)
+		data, err = tx.Get(db, key)
 		if err != nil {
 			panic(err)
 		}
-
-		data, err = tx.PutReserve(db, key, len(source), 0)
-		copy(data, source)
 
 		n := fb.GetUOffsetT(data)
 		bin.Init(data, n)
@@ -186,6 +180,7 @@ func BenchmarkAdd(b *testing.B) {
 				break
 			}
 		}
+		tx.Put(db, key, data, 0)
 
 		tx.Commit()
 	}
