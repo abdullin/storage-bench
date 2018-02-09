@@ -1,3 +1,5 @@
+namespace bench;
+
 enum ItemType : ubyte { Undefined = 0, Bin = 1, Box, Product, Kit, Container, Location}
 enum BinFlags : ubyte { None = 0, Missing = 1, Damaged = 2, Reserved = 4, HasSale = 8}
 
