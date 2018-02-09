@@ -18,7 +18,6 @@ namespace SimCluster {
                 var br = new Bin();
 
                 for (uint i = 0; i < n; i++) {
-                    
                     using (var tx = env.BeginTransaction(Const.WriteTx)) {
                         var data = tx.Get(db, key);
 
@@ -27,7 +26,7 @@ namespace SimCluster {
 
                         var search = i % Const.BinItemCount + Const.ProductIDOffset;
 
-                        
+
                         for (int j = 0; j < bin.ItemsLength; j++) {
                             var it = bin.Items(j).Value;
                             if (it.ItemID == search) {
@@ -47,10 +46,10 @@ namespace SimCluster {
             var builder = new FlatBufferBuilder(1024);
             Bin.StartItemsVector(builder, Const.BinItemCount);
             for (uint i = 0; i < Const.BinItemCount; i++) {
-                var itemID = i+Const.ProductIDOffset;
-                BinItem.CreateBinItem(builder, itemID, 0,i+1, ItemType.Product);
+                var itemID = i + Const.ProductIDOffset;
+                BinItem.CreateBinItem(builder, itemID, 0, i + 1, ItemType.Product);
             }
-            
+
             var bins = builder.EndVector();
             var code = builder.CreateString(Const.BinCode);
             var bin = Bin.CreateBin(builder, bins, ItemType.Bin, Const.Flag, code, 1, Const.SaleID);
@@ -66,8 +65,8 @@ namespace SimCluster {
         public static void BenchAddRemove(int n) {
             using (var env = Utils.NewEnv()) {
                 var db = env.CreateDB();
-                
-                
+
+
                 //prepare 
                 var key = new byte[] {1};
 
@@ -84,7 +83,7 @@ namespace SimCluster {
                         ArraySegment<byte> data = tx.Get(db, key);
 
                         var br = Bin.GetRootAsBin(new ByteBuffer(data.Array), bin);
-                        
+
                         var search = i % Const.BinItemCount + Const.ProductIDOffset;
 
                         var binCount = br.ItemsLength;
@@ -114,14 +113,13 @@ namespace SimCluster {
 
                                     var bins = builder.EndVector();
                                     var code = builder.CreateString(br.Code);
-                                    var nb = Bin.CreateBin(builder, bins, br.Type, br.Flags, code, br.Subtype, br.SaleID);
+                                    var nb = Bin.CreateBin(builder, bins, br.Type, br.Flags, code, br.Subtype,
+                                        br.SaleID);
                                     builder.Finish(nb.Value);
                                     data = builder.ToSegment();
                                     found = true;
                                     break;
-
                                 }
-
                             }
                         }
 
@@ -143,6 +141,7 @@ namespace SimCluster {
                             builder.Finish(nb.Value);
                             data = builder.ToSegment();
                         }
+
                         tx.Put(db, key, data);
                         tx.Commit();
                     }
@@ -163,9 +162,11 @@ namespace SimCluster {
 
                 ulong counter = 0;
                 var br = new Bin();
-                for (uint i = 0; i < n; i++) {
-                    
-                    using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly)) {
+                using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly)) {
+                    for (uint i = 0; i < n; i++) {
+                        tx.Reset();
+                        tx.Renew();
+
                         var data = tx.Get(db, key);
 
                         var buf = new ByteBuffer(data);
