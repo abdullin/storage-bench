@@ -22,9 +22,9 @@ namespace SimCluster {
 
             var freq = n / step.Elapsed.TotalSeconds;
 
-            var op = TimeSpan.FromTicks(step.Elapsed.Ticks / n).TotalMilliseconds * 1000000;
+            var op = TimeSpan.FromTicks(step.Elapsed.Ticks).TotalMilliseconds * 1000000 / n;
             
-            Console.WriteLine($"{bench.Method.DeclaringType.Name+"/"+bench.Method.Name,42}: {freq,10:F0} op/sec {op,10:F0} ns/op");
+            Console.WriteLine($"{bench.Method.Name,-30}\t{freq,10:F0} op/sec {op,10:F0} ns/op");
         }
     }
 }

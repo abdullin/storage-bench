@@ -8,8 +8,8 @@ namespace SimCluster {
     /// <summary>
     /// We store records in /tenant/warehouse/obj/ID -> DTO
     /// </summary>
-    public sealed class InventoryBinProtoBuf  {
-        public static void BenchAddRemove(int n) {
+    public sealed class InventoryProtoBuf  {
+        public static void BenchmarkProtoBufAddRemove(int n) {
             using (var env = Utils.NewEnv()) {
                 var db = env.CreateDB();
                 
@@ -86,7 +86,7 @@ namespace SimCluster {
             bin.Items.Add(new BinItem(ItemType.Product, itemID, shipmentID, count));
         }
 
-        public static void BenchRead(int n) {
+        public static void BenchmarkProtoBufRead(int n) {
             using (var env = Utils.NewEnv()) {
                 var db = env.CreateDB();
                 
@@ -114,7 +114,7 @@ namespace SimCluster {
             }
         }
         
-        public static void BenchAdd(int n) {
+        public static void BenchmarkProtoBufAdd(int n) {
             using (var env = Utils.NewEnv()) {
                 var db = env.CreateDB();
                 

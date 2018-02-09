@@ -4,8 +4,8 @@ using FlatBuffers;
 using LightningDB;
 
 namespace SimCluster {
-    public sealed class InventoryBinFlatBuffers {
-        public static void BenchAdd(int n) {
+    public sealed class InventoryFlatBuffers {
+        public static void BenchmarkFlatBuffersAdd(int n) {
             using (var env = Utils.NewEnv()) {
                 var db = env.CreateDB();
 
@@ -62,7 +62,7 @@ namespace SimCluster {
         }
 
 
-        public static void BenchAddRemove(int n) {
+        public static void BenchmarkFlatBuffersAddRemove(int n) {
             using (var env = Utils.NewEnv()) {
                 var db = env.CreateDB();
 
@@ -149,7 +149,7 @@ namespace SimCluster {
             }
         }
 
-        public static void BenchRead(int n) {
+        public static void BenchmarkFlatBuffersRead(int n) {
             using (var env = Utils.NewEnv()) {
                 var db = env.CreateDB();
 

@@ -17,14 +17,15 @@ namespace SimCluster {
             TestLmdb();
             
             var benchmarks = new Action<int>[] {
-                InventoryBinProtoBuf.BenchAdd,
-                InventoryBinFlatBuffers.BenchAdd,
+                InventoryFlatBuffers.BenchmarkFlatBuffersAdd,
+                InventoryFlatBuffers.BenchmarkFlatBuffersAddRemove,
+                InventoryFlatBuffers.BenchmarkFlatBuffersRead,
                 
-                InventoryBinProtoBuf.BenchAddRemove,
-                InventoryBinFlatBuffers.BenchAddRemove,
                 
-                InventoryBinProtoBuf.BenchRead,
-                InventoryBinFlatBuffers.BenchRead,
+                InventoryProtoBuf.BenchmarkProtoBufAdd,
+                InventoryProtoBuf.BenchmarkProtoBufAddRemove,
+                InventoryProtoBuf.BenchmarkProtoBufRead,
+
             };
 
             foreach (var b in benchmarks) {
