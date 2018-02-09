@@ -150,7 +150,7 @@ func BenchmarkFlatBuffersRead(b *testing.B) {
 func BenchmarkFlatBuffersAdd(b *testing.B) {
 
 	var (
-		data []byte
+		data, raw []byte
 
 		item = &BinItem{}
 		bin  = &Bin{}
@@ -164,10 +164,19 @@ func BenchmarkFlatBuffersAdd(b *testing.B) {
 			panic(err)
 		}
 
-		data, err = tx.Get(db, key)
+		tx.RawRead = true
+
+		raw, err = tx.Get(db, key)
 		if err != nil {
 			panic(err)
 		}
+
+		data, err = tx.PutReserve(db, key, len(raw), 0)
+		if err != nil {
+			panic(err)
+		}
+
+		copy(data, raw)
 
 		n := fb.GetUOffsetT(data)
 		bin.Init(data, n)
@@ -180,8 +189,6 @@ func BenchmarkFlatBuffersAdd(b *testing.B) {
 				break
 			}
 		}
-		tx.Put(db, key, data, 0)
-
 		tx.Commit()
 	}
 
@@ -206,6 +213,7 @@ func BenchmarkFlatBuffersAddRemove(b *testing.B) {
 		}
 
 		data, err = tx.Get(db, key)
+
 		if err != nil {
 			panic(err)
 		}
